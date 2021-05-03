@@ -1,5 +1,5 @@
 .idea
 dist
 build
-src/demojiprocess.egg-info
+src/discordemoji.egg-info
 src/demojiprocess/resources/__pycache__
