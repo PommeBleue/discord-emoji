@@ -4,6 +4,9 @@
 
 https://static.emzi0767.com/misc/discordEmojiMap.min.json
 """
+import re
+from os import PathLike
+from typing import Iterator
 
 from .utils import pattern_from
 from urllib.error import URLError
@@ -19,18 +22,18 @@ VERSION_TIMESTAMP_KEY = 'versionTimestamp'
 
 
 class EmojiHandler:
-    emojis = []
-    _version = None
-    _pattern = None
+    emojis : list[dict] = []
+    _version : float | None = None
+    _pattern : re.Pattern | None = None
 
-    def __init__(self, cache_dir=None):
+    def __init__(self, cache_dir: str | PathLike[str] = None) -> None:
         self.cache_dir = Path(__file__) / cache_dir if cache_dir else Path.home() / 'discordEmojisMap'
         self.cache_file = self.cache_dir / 'emojis.json'
         self._get()
         self._set_pattern()
 
 
-    def _get(self):
+    def _get(self) -> None:
         if self.cache_file.exists():
             try:
                 with self.cache_file.open() as f:
@@ -46,11 +49,11 @@ class EmojiHandler:
         self.refresh()
 
 
-    def _set_pattern(self):
+    def _set_pattern(self) -> None:
         self._pattern = pattern_from(list(self.surrogates()))
 
 
-    def refresh(self):
+    def refresh(self) -> None:
         try:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
 
@@ -71,7 +74,7 @@ class EmojiHandler:
             pass
 
 
-    def surrogates(self):
+    def surrogates(self) -> Iterator[str]:
         for emoji in self.emojis:
             yield emoji.get('surrogates')
 
@@ -106,7 +109,7 @@ class EmojiHandler:
         return emoji is not None
 
 
-    def names_of_unicode(self, unicode_entity : str, with_columns : bool = True) -> list[str,] | None:
+    def names_of_unicode(self, unicode_entity : str, with_columns : bool = True) -> list[str,]:
         """Returns the names of the corresponding Unicode entity if it exists and None otherwise.
 
         :param unicode_entity:
@@ -145,7 +148,7 @@ class EmojiHandler:
         return sep.join(result)
 
 
-    def unicode_of_name(self, name):
+    def unicode_of_name(self, name: str) -> str:
         """
 
         :param name:
@@ -157,7 +160,7 @@ class EmojiHandler:
         raise ValueError('Name {name} is not valid emoji name.'.format(name=name))
 
 
-    def code_point_of_name(self, name, sep="-"):
+    def code_point_of_name(self, name: str, sep: str = "-") -> str:
         """Converts the Unicode entity that corresponds to the given name to code point.
 
         :param name: A name that matches the wanted unicode_entity.
@@ -171,7 +174,7 @@ class EmojiHandler:
         return self.code_point_of_unicode(unicode_entity, sep)
 
 
-    def findall(self, text):
+    def findall(self, text : str) -> list[str,]:
         """
 
         :param text:
@@ -180,7 +183,7 @@ class EmojiHandler:
         return self._pattern.findall(text)
 
 
-    def replace(self, text, rep=""):
+    def replace(self, text : str, rep : str ="") -> str:
         """
         s
         :param text:
