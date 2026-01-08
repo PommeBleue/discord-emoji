@@ -1,5 +1,6 @@
 .idea
+.venv
 dist
 build
 src/discordemoji.egg-info
-src/demojiprocess/resources/__pycache__
+**__pycache__
