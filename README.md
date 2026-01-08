@@ -1,6 +1,6 @@
 # Discord Emoji processing
 ## Requirements
-`discordemoji` requires a python version greater than `3.6`, but no additional requirements in order to be run.
+`discordemoji` requires a python version greater than `3.7`, but no additional requirements in order to be run.
 ## How it works
 The script fetches emoji data from [here](https://emzi0767.mzgit.io/discord-emoji/discordEmojiMap-canary.min.json).
 The first time you use it, it will store this data in a cache folder of your choosing, allowing you to load it for future uses.
