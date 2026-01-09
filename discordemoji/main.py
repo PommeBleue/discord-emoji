@@ -4,36 +4,53 @@
 
 https://static.emzi0767.com/misc/discordEmojiMap.min.json
 """
+
 import re
+import json
+import urllib.request
+import logging
+
 from os import PathLike
 from typing import Iterator
-
-from .utils import pattern_from
+from .utils import pattern_from, cleaned
 from urllib.error import URLError
 from datetime import datetime
 from pathlib import Path
 
-import json
-import urllib.request
 
 SOURCE_URL = 'https://static.emzi0767.com/misc/discordEmojiMap.min.json'
 DEFINITIONS_KEY = 'emojiDefinitions'
 VERSION_TIMESTAMP_KEY = 'versionTimestamp'
 
 
+logging.basicConfig(
+    format='%(asctime)s;%(levelname)s;%(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
 class EmojiHandler:
-    emojis : list[dict] = []
+    emojis : list[dict[str, Any]] = []
     _version : float | None = None
     _pattern : re.Pattern | None = None
+    _unicode_map : dict[str, dict[str, Any]] = {}
+    _name_map : dict[str, dict[str, Any]] = {}
 
-    def __init__(self, cache_dir: str | PathLike[str] = None) -> None:
+
+    def __init__(self, cache_dir: str | PathLike[str] | None = None) -> None:
+        """Init with option cache dir."""
+
         self.cache_dir = Path(__file__) / cache_dir if cache_dir else Path.home() / 'discordEmojisMap'
         self.cache_file = self.cache_dir / 'emojis.json'
         self._get()
+        self._build_lookups()
         self._set_pattern()
 
 
     def _get(self) -> None:
+        """Load emoji data from cache or request from SOURCE_URL."""
+
         if self.cache_file.exists():
             try:
                 with self.cache_file.open() as f:
@@ -50,11 +67,30 @@ class EmojiHandler:
 
 
     def _set_pattern(self) -> None:
+        """Compile pattern for emoji detection."""
+
         self._pattern = pattern_from(list(self.surrogates()))
 
 
+    def _build_lookups(self) -> None:
+        """Emojis lookup helpers."""
+
+        self._unicode_map = {
+            emoji.get('surrogates'): emoji
+            for emoji in self.emojis
+        }
+
+        self._name_map = {}
+        for emoji in self.emojis:
+            for name in emoji.get('names', []):
+                self._name_map[emoji] = name
+
+
     def refresh(self) -> None:
+        """Fetch latest emoji data and update cache file accordingly"""
+        
         try:
+            logger.info('Attempting to reload emoji data.')
             self.cache_dir.mkdir(parents=True, exist_ok=True)
 
             with urllib.request.urlopen(SOURCE_URL) as response:
@@ -64,19 +100,29 @@ class EmojiHandler:
 
             if self._version is None or self._version < version_timestamp:
                 emoji_data = data.get(DEFINITIONS_KEY)
-                with open(self.cache_file, 'w') as f:
-                    json.dump(data, f)
 
-                self.emojis = emoji_data
-                self._version = version_timestamp
+                if emoji_data:
+                    with open(self.cache_file, 'w') as f:
+                        json.dump(data, f)
+
+                    self.emojis = emoji_data
+                    self._version = version_timestamp
+                    self._build_lookups()
+                    self._set_pattern()
+                    logger.info(f'Updated to version {version_timestamp}. Fetched {len(self.emojis)} emojis.')
+                else:
+                    logger.error('No emoji data found in response.')
+            else:
+                logger.info('Emoji data already up to date.')
 
         except URLError:
-            pass
+            logger.error('Something went wrong while attempting to request the json file.')
 
 
     def surrogates(self) -> Iterator[str]:
         for emoji in self.emojis:
-            yield emoji.get('surrogates')
+            if surrogate := emoji.get('surrogates'):
+                yield surrogate
 
 
     def emoji_of_unicode(self, unicode_entity : str) -> dict:
@@ -85,7 +131,7 @@ class EmojiHandler:
         :param unicode_entity:
         :return:
         """
-        return next((emoji for emoji in self.emojis if emoji.get('surrogates') == unicode_entity), None)
+        return self._unicode_map.get(unicode_entity)
 
 
     def emoji_of_name(self, name : str) -> dict:
@@ -94,7 +140,7 @@ class EmojiHandler:
         :param name:
         :return:
         """
-        return next((emoji for emoji in self.emojis if name in emoji.get('names') or name in emoji.get('namesWithColons')))
+        return self._name_map.get(cleaned(name))
 
 
     def is_valid_unicode(self, unicode_entity : str) -> bool:
@@ -105,11 +151,10 @@ class EmojiHandler:
         :return: True iff the given Unicode entity is valid.
         :rtype: bool
         """
-        emoji = self.emoji_of_unicode(unicode_entity)
-        return emoji is not None
+        return unicode_entity in self._unicode_map
 
 
-    def names_of_unicode(self, unicode_entity : str, with_columns : bool = True) -> list[str,]:
+    def names_of_unicode(self, unicode_entity : str, with_colons : bool = True) -> list[str,]:
         """Returns the names of the corresponding Unicode entity if it exists and None otherwise.
 
         :param unicode_entity:
@@ -118,9 +163,8 @@ class EmojiHandler:
         """
         emoji = self.emoji_of_unicode(unicode_entity)
         if emoji:
-            if with_columns:
-                return emoji.get('namesWithColons')
-            return emoji.get('names')
+            key = 'namesWithColons' if with_colons else 'names'
+            return emoji.get(key, [])
         raise ValueError('Not a valid unicode_entity.')
 
 
