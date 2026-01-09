@@ -61,9 +61,9 @@ def test_names_of_unicode():
 	assert emojis.names_of_unicode("🏂🏻") == [":snowboarder_tone1:", ":snowboarder_light_skin_tone:", ":snowboarder::skin-tone-1:"]
 	assert emojis.names_of_unicode("👎🏾") == [":thumbsdown_tone4:", ":_1_tone4:", ":thumbdown_tone4:", ":thumbsdown::skin-tone-4:", ":-1::skin-tone-4:", ":thumbdown::skin-tone-4:", ":thumbs_down::skin-tone-4:"]
 	assert emojis.names_of_unicode("🎌") == [":crossed_flags:"]
-	assert emojis.names_of_unicode("👨🏿‍🔬", with_columns=False) == ["man_scientist_tone5", "man_scientist_dark_skin_tone", "man_scientist:skin-tone-5"]
-	assert emojis.names_of_unicode("🎌", with_columns=False) == ["crossed_flags"]
-	assert emojis.names_of_unicode("👩🏾‍🌾", with_columns=False) == ["woman_farmer_tone4", "woman_farmer_medium_dark_skin_tone", "woman_farmer:skin-tone-4"]
+	assert emojis.names_of_unicode("👨🏿‍🔬", with_colons=False) == ["man_scientist_tone5", "man_scientist_dark_skin_tone", "man_scientist:skin-tone-5"]
+	assert emojis.names_of_unicode("🎌", with_colons=False) == ["crossed_flags"]
+	assert emojis.names_of_unicode("👩🏾‍🌾", with_colons=False) == ["woman_farmer_tone4", "woman_farmer_medium_dark_skin_tone", "woman_farmer:skin-tone-4"]
 
 
 @test_function

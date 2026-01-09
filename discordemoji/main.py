@@ -11,7 +11,7 @@ import urllib.request
 import logging
 
 from os import PathLike
-from typing import Iterator
+from typing import Iterator, Any
 from .utils import pattern_from, cleaned
 from urllib.error import URLError
 from datetime import datetime
@@ -83,11 +83,11 @@ class EmojiHandler:
         self._name_map = {}
         for emoji in self.emojis:
             for name in emoji.get('names', []):
-                self._name_map[emoji] = name
+                self._name_map[name] = emoji
 
 
     def refresh(self) -> None:
-        """Fetch latest emoji data and update cache file accordingly"""
+        """Fetch latest emoji data and update the cache file accordingly"""
         
         try:
             logger.info('Attempting to reload emoji data.')
@@ -158,7 +158,7 @@ class EmojiHandler:
         """Returns the names of the corresponding Unicode entity if it exists and None otherwise.
 
         :param unicode_entity:
-        :param with_columns:
+        :param with_colons:
         :return:
         """
         emoji = self.emoji_of_unicode(unicode_entity)
